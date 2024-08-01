@@ -1,9 +1,14 @@
-import cadquery as cq
+import sys
+import os
 import requests
 import io
+import cadquery as cq
+from PyQt5.QtWidgets import (QApplication, QLabel, QMainWindow, QPushButton, QFileDialog,
+                             QVBoxLayout, QWidget, QHBoxLayout, QLineEdit, QMessageBox, QSpacerItem, QSizePolicy)
+from PyQt5.QtGui import QPixmap, QImage, QFont
+from PyQt5.QtCore import Qt
 from PIL import Image
 import utils
-import os
 
 BRIGHT_GREEN = "\033[92m"
 YELLOW = "\033[93m"
@@ -18,116 +23,163 @@ def get_next_filename(directory, prefix='model', extension='stl'):
             return filename
         i += 1
 
-def print_ascii_art():
-    print(BRIGHT_GREEN + r"""
+class ImageProcessor(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.initUI()
 
+    def initUI(self):
+        self.setWindowTitle('Spotify Code to STL Converter')
+        self.setGeometry(100, 100, 800, 600)
+        
+        # Set dark theme
+        self.setStyleSheet("background-color: #2e2e2e; color: white;")
+        
+        self.urlLabel = QLabel('Enter link of song, album, artist or playlist:')
+        self.urlLabel.setFont(QFont("Arial", 14, QFont.Bold))
+        self.urlLabel.setAlignment(Qt.AlignCenter)
+        self.urlLabel.setStyleSheet("QLabel {color: white;}")
+        
+        self.urlInput = QLineEdit(self)
+        self.urlInput.setStyleSheet("QLineEdit {background-color: #444444; color: white; padding: 5px;}")
+        
+        self.loadButton = self.createButton('Generate STL', self.generateSTL)
+        self.openFolderButton = self.createButton('Open Folder', self.openFolder)
+        self.openFolderButton.setEnabled(False)
+        
+        self.messageLabel = QLabel('')
+        self.messageLabel.setFont(QFont("Arial", 14))
+        self.messageLabel.setStyleSheet("QLabel {color: yellow;}")
+        
+        layout = QVBoxLayout()
+        layout.addWidget(self.urlLabel)
+        layout.addWidget(self.urlInput)
+        layout.addWidget(self.loadButton)
+        layout.addWidget(self.messageLabel)
+        layout.addWidget(self.openFolderButton)
+        
+        container = QWidget()
+        container.setLayout(layout)
+        self.setCentralWidget(container)
 
+    def createButton(self, text, func):
+        button = QPushButton(text)
+        button.setStyleSheet("""
+            QPushButton {
+                background-color: #444444;
+                color: white;
+                border: none;
+                padding: 10px;
+                margin: 5px;
+            }
+            QPushButton:hover {
+                background-color: #555555;
+            }
+            QPushButton:pressed {
+                background-color: #333333;
+            }
+        """)
+        button.clicked.connect(func)
+        return button
 
-   _____                   __     _     ____                           __              _         
-  / ___/    ____   ____   / /_   (_)   / __/   __  __         _____   / /_   ____ _   (_)   ____ 
-  \__ \    / __ \ / __ \ / __/  / /   / /_    / / / /        / ___/  / __ \ / __ `/  / /   / __ \
- ___/ /   / /_/ // /_/ // /_   / /   / __/   / /_/ /        / /__   / / / // /_/ /  / /   / / / /
-/____/   / .___/ \____/ \__/  /_/   /_/      \__, /         \___/  /_/ /_/ \__,_/  /_/   /_/ /_/ 
-        /_/                                 /____/                                               
+    def generateSTL(self):
+        share_link = self.urlInput.text()
+        
+        if not share_link:
+            self.showMessage("Please enter a valid Spotify link.")
+            return
+        
+        data = utils.get_link_data(share_link)
 
+        if len(data) != 2:
+            self.showMessage("Something went wrong while parsing the URL.")
+            return
 
-                                                                                                                      
-             """ + RESET)
+        code_URL = f"https://www.spotifycodes.com/downloadCode.php?uri=jpeg%2F000000%2Fwhite%2F640%2Fspotify%3A{data[0]}%3A{data[1]}"
+        r = requests.get(code_URL)
 
-def print_completion_message(filename):
-    print(BRIGHT_GREEN + r"""
- 
+        if not r.ok or not r.content:
+            self.showMessage("Something went wrong while fetching the Spotify code.")
+            return
 
+        try:
+            img = Image.open(io.BytesIO(r.content)).crop((160, 0, 640-31, 160))
+        except Exception as e:
+            self.showMessage(f"Error loading image: {e}")
+            return
 
-   __  __                                                                                      __          __    __
-  / / / /   _____  ___           __  __  ____   __  __   _____          ____ ___   ____   ____/ /  ___    / /   / /
- / / / /   / ___/ / _ \         / / / / / __ \ / / / /  / ___/         / __ `__ \ / __ \ / __  /  / _ \  / /   / / 
-/ /_/ /   (__  ) /  __/        / /_/ / / /_/ // /_/ /  / /            / / / / / // /_/ // /_/ /  /  __/ / /   /_/  
-\____/   /____/  \___/         \__, /  \____/ \__,_/  /_/            /_/ /_/ /_/ \____/ \__,_/   \___/ /_/   (_)   
-                              /____/                                                                               
+        width, height = img.size
+        pix = img.load()
 
-                                                                                                                        
-                                              """ + RESET)
-    print(YELLOW + f"File {filename} created successfully! The file is located in the models folder" + RESET)
+        bar_heights = []
+        max_height_of_single_bar = 0
 
-URL = "https://www.spotifycodes.com/downloadCode.php?uri=jpeg%2F000000%2Fwhite%2F640%2Fspotify%3Aalbum%3A4m2880jivSbbyEGAKfITCa"
+        for x in range(width):
+            at_bar = False
+            curr_height = 0
+
+            for y in range(height):
+                if pix[x, y][0] > 20 or pix[x, y][1] > 20 or pix[x, y][2] > 20:
+                    at_bar = True
+                    curr_height += 1
+
+            if at_bar and curr_height > max_height_of_single_bar:
+                max_height_of_single_bar = curr_height / 20
+            elif not at_bar and max_height_of_single_bar > 0:
+                bar_heights.append(max_height_of_single_bar)
+                max_height_of_single_bar = 0
+
+        if not bar_heights:
+            self.showMessage("No bars detected in the Spotify code image.")
+            return
+
+        models_dir = 'models'
+        if not os.path.exists(models_dir):
+            os.makedirs(models_dir)
+
+        try:
+            model = cq.importers.importStep('base_model.step')
+        except Exception as e:
+            self.showMessage(f"Error importing base model: {e}")
+            return
+
+        curr_bar = 0
+
+        for bar in bar_heights:
+            model = (
+                model.pushPoints([(15.5 + curr_bar * 1.88, 7.5)])
+                .sketch()
+                .slot(9 / 5 * bar, 1, 90)
+                .finalize()
+                .extrude(4)
+            )
+            curr_bar += 1
+
+        filename = get_next_filename(models_dir, 'model', 'stl')
+
+        try:
+            cq.exporters.export(model, os.path.join(models_dir, filename))
+        except Exception as e:
+            self.showMessage(f"Error exporting model: {e}")
+            return
+
+        self.showMessage(f"File {filename} created successfully! The file is located in the models folder", success=True)
+        self.openFolderButton.setEnabled(True)
+        self.generatedFilePath = os.path.join(models_dir, filename)
+
+    def openFolder(self):
+        if hasattr(self, 'generatedFilePath'):
+            os.startfile(os.path.dirname(self.generatedFilePath))
+
+    def showMessage(self, message, success=False):
+        if success:
+            self.messageLabel.setStyleSheet("QLabel {color: green;}")
+        else:
+            self.messageLabel.setStyleSheet("QLabel {color: yellow;}")
+        self.messageLabel.setText(message)
 
 if __name__ == '__main__':
-
-    print_ascii_art()
-
-    models_dir = 'models'
-    if not os.path.exists(models_dir):
-        os.makedirs(models_dir)
-
-    share_link = input(YELLOW + "Enter link of song, album, artist or playlist: " + RESET)
-
-    data = utils.get_link_data(share_link)
-
-    if len(data) != 2:
-        print(YELLOW + "Something went wrong while parsing the URL." + RESET)
-        exit(-1)
-
-    code_URL = f"https://www.spotifycodes.com/downloadCode.php?uri=jpeg%2F000000%2Fwhite%2F640%2Fspotify%3A{data[0]}%3A{data[1]}"
-    r = requests.get(code_URL)
-
-    if not r.ok or not r.content:
-        print(YELLOW + "Something went wrong while fetching the Spotify code." + RESET)
-        exit(-1)
-
-    try:
-        img = Image.open(io.BytesIO(r.content)).crop((160, 0, 640-31, 160))
-    except Exception as e:
-        print(YELLOW + f"Error loading image: {e}" + RESET)
-        exit(-1)
-
-    width, height = img.size
-    pix = img.load()
-
-    bar_heights = []
-    max_height_of_single_bar = 0
-
-    for x in range(width):
-        at_bar = False
-        curr_height = 0
-
-        for y in range(height):
-            if pix[x, y][0] > 20 or pix[x, y][1] > 20 or pix[x, y][2] > 20:
-                at_bar = True
-                curr_height += 1
-
-        if at_bar and curr_height > max_height_of_single_bar:
-            max_height_of_single_bar = curr_height / 20
-        elif not at_bar and max_height_of_single_bar > 0:
-            bar_heights.append(max_height_of_single_bar)
-            max_height_of_single_bar = 0
-
-    print(YELLOW + f"There are {len(bar_heights)} bars of heights {bar_heights}" + RESET)
-
-    try:
-        model = cq.importers.importStep('base_model.step')
-    except Exception as e:
-        print(YELLOW + f"Error importing base model: {e}" + RESET)
-        exit(-1)
-
-    curr_bar = 0
-
-    for bar in bar_heights:
-        model = (
-            model.pushPoints([(15.5 + curr_bar * 1.88, 7.5)])
-            .sketch()
-            .slot(9 / 5 * bar, 1, 90)
-            .finalize()
-            .extrude(4)
-        )
-        curr_bar += 1
-
-    filename = get_next_filename(models_dir, 'model', 'stl')
-
-    try:
-        cq.exporters.export(model, os.path.join(models_dir, filename))
-    except Exception as e:
-        print(YELLOW + f"Error exporting model: {e}" + RESET)
-        exit(-1)
-
-    print_completion_message(filename)
+    app = QApplication(sys.argv)
+    ex = ImageProcessor()
+    ex.show()
+    sys.exit(app.exec_())
