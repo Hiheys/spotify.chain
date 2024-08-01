@@ -2,7 +2,7 @@
 
 This repository contains the code and 3D model files needed to create a custom Spotify keychain. This keychain is designed to incorporate a Spotify code of your favorite song, album, artist, or playlist, which can be scanned to play music directly from Spotify.
 
-![](https://github.com/ricdigi/spotify_keychain_3D_model/blob/master/Images/render_b.png?raw=true)
+// Remix of [ricdigi](https://github.com/ricdigi/spotify_keychain_3D_model)
 
 ## How to Use the Code
 
@@ -15,9 +15,8 @@ The script in this repository uses `cadquery` to modify a base 3D model of the k
    - Install thease upgrades: `pip install nptyping --upgrade`, `pip install numpy --upgrade`
 
 2. **Running the Script**:
-   - Go to the application folder. 
-   ![click here](image.png)
-   - click here, delete this line and write `cmd`
+   - Go to the application folder. click at folder path
+   - click here (folder path), delete this line and write `cmd`
    - Run the script (`python main.py`) It will prompt you to enter the link of the song, album, artist, or playlist from Spotify.
 
 3. **Input URL Parsing**:
