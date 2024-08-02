@@ -10,10 +10,6 @@ from PyQt5.QtCore import Qt
 from PIL import Image
 import utils
 
-BRIGHT_GREEN = "\033[92m"
-YELLOW = "\033[93m"
-RESET = "\033[0m"
-
 def get_next_filename(directory, prefix='model', extension='stl'):
     """Generate a unique filename with an incrementing number."""
     i = 1
@@ -30,32 +26,30 @@ class ImageProcessor(QMainWindow):
 
     def initUI(self):
         self.setWindowTitle('Spotify Code to STL Converter')
-        self.setGeometry(100, 100, 800, 600)
-        
-        # Set dark theme
-        self.setStyleSheet("background-color: #2e2e2e; color: white;")
-        
-        self.urlLabel = QLabel('Enter link of song, album, artist or playlist:')
-        self.urlLabel.setFont(QFont("Arial", 14, QFont.Bold))
+        self.setGeometry(100, 100, 600, 400)
+        self.setStyleSheet("background-color: #121212; color: #ffffff;")
+        self.urlLabel = QLabel('Enter Spotify link:')
+        self.urlLabel.setFont(QFont("Arial", 12, QFont.Bold))
         self.urlLabel.setAlignment(Qt.AlignCenter)
-        self.urlLabel.setStyleSheet("QLabel {color: white;}")
+        self.urlLabel.setStyleSheet("QLabel {color: #ffffff;}")
         
         self.urlInput = QLineEdit(self)
-        self.urlInput.setStyleSheet("QLineEdit {background-color: #444444; color: white; padding: 5px;}")
+        self.urlInput.setPlaceholderText('Insert link here...')
+        self.urlInput.setStyleSheet("QLineEdit {background-color: #1f1f1f; color: #ffffff; padding: 5px; border-radius: 5px;}")
+
+        self.messageLabel = QLabel('')
+        self.messageLabel.setFont(QFont("Arial", 12))
+        self.messageLabel.setStyleSheet("QLabel {color: #ffcc00;}")
         
         self.loadButton = self.createButton('Generate STL', self.generateSTL)
         self.openFolderButton = self.createButton('Open Folder', self.openFolder)
         self.openFolderButton.setEnabled(False)
         
-        self.messageLabel = QLabel('')
-        self.messageLabel.setFont(QFont("Arial", 14))
-        self.messageLabel.setStyleSheet("QLabel {color: yellow;}")
-        
         layout = QVBoxLayout()
         layout.addWidget(self.urlLabel)
         layout.addWidget(self.urlInput)
-        layout.addWidget(self.loadButton)
         layout.addWidget(self.messageLabel)
+        layout.addWidget(self.loadButton)
         layout.addWidget(self.openFolderButton)
         
         container = QWidget()
@@ -66,17 +60,18 @@ class ImageProcessor(QMainWindow):
         button = QPushButton(text)
         button.setStyleSheet("""
             QPushButton {
-                background-color: #444444;
-                color: white;
-                border: none;
+                background-color: #1f1f1f;
+                color: #ffffff;
+                border: 1px solid #ffffff;
                 padding: 10px;
                 margin: 5px;
+                border-radius: 5px;
             }
             QPushButton:hover {
-                background-color: #555555;
+                background-color: #2e2e2e;
             }
             QPushButton:pressed {
-                background-color: #333333;
+                background-color: #0d0d0d;
             }
         """)
         button.clicked.connect(func)
@@ -173,9 +168,9 @@ class ImageProcessor(QMainWindow):
 
     def showMessage(self, message, success=False):
         if success:
-            self.messageLabel.setStyleSheet("QLabel {color: green;}")
+            self.messageLabel.setStyleSheet("QLabel {color: #00ff00;}")
         else:
-            self.messageLabel.setStyleSheet("QLabel {color: yellow;}")
+            self.messageLabel.setStyleSheet("QLabel {color: #ffcc00;}")
         self.messageLabel.setText(message)
 
 if __name__ == '__main__':

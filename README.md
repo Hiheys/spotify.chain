@@ -11,14 +11,13 @@ The script in this repository uses `cadquery` to modify a base 3D model of the k
 
 
 1. **Setup Python Environment**:
-   - Ensure you have Python installed on your system. ([install here](https://www.python.org/downloads/release/python-396/))
+   - Ensure you have Python **(3.9.6!)** installed on your system. ([install here](https://www.python.org/downloads/release/python-396/))
    - Install required packages: `cadquery`, `requests`, `pillow`.
    - Install these packages using `pip install cadquery requests pillow`.
    - Install thease upgrades: `pip install nptyping --upgrade`, `pip install numpy --upgrade`
 
 2. **Running the Script**:
-   - Go to the application folder. click at folder path
-   - click here (folder path), delete this line and write `cmd`
+   - Go to the application folder. click at folder path delete this line and write `cmd`
    - Run the script (`python main.py`) It will prompt you to enter the link of the song, album, artist, or playlist from Spotify.
 
 3. **Input URL Parsing**:
